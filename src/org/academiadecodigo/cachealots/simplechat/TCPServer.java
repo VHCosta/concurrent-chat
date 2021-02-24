@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
@@ -17,7 +16,7 @@ public class TCPServer {
     private ServerSocket serverSocket;
     private BufferedReader in;
 
-    private List<TCPClient> clientList;
+    private List<Dispatcher> clientList;
 
     public static void main(String[] args) {
 
@@ -50,26 +49,28 @@ public class TCPServer {
 
         clientList = new LinkedList<>();
 
+        ExecutorService threadPool = Executors.newFixedThreadPool(20);
+
+        Socket clientSocket;
+
         while(true){
 
-            ExecutorService threadPool = Executors.newFixedThreadPool(20);
 
-            Socket clientSocket = serverSocket.accept();
+            clientSocket = serverSocket.accept();
 
-            TCPClient client = new TCPClient(clientSocket, this);
+            Dispatcher client = new Dispatcher(clientSocket, this);
 
             clientList.add(client);
-            threadPool.submit(client);
 
+            threadPool.submit(client);
 
         }
 
-
     }
 
-    public void broadcast(String message){
+    public void broadcast(String message) throws IOException {
 
-        for (TCPClient client : clientList){
+        for (Dispatcher client : clientList){
             client.receiveMessage(message);
         }
 
