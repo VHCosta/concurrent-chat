@@ -7,20 +7,27 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
-public class TCPClient {
+public class TCPClient implements Runnable {
 
-    private static String hostName;
-    private static int portNumber;
-    private static Socket clientSocket;
-    private static Scanner reader;
-    private static PrintWriter out;
-    private static BufferedReader in;
+    private String hostName;
+    private int portNumber;
+    private TCPServer server;
+    private Socket clientSocket;
+    private Scanner reader;
+    private PrintWriter out;
+    private BufferedReader in;
 
-    public static void main(String[] args) {
+    public TCPClient(Socket clientSocket, TCPServer server) {
+        this.clientSocket = clientSocket;
+        this.server = server;
+    }
+
+    @Override
+    public void run() {
 
         try {
 
-            getUserInput();
+            getServerAddress();
 
             initClient();
 
@@ -31,7 +38,7 @@ public class TCPClient {
 
     }
 
-    static void getUserInput(){
+    void getServerAddress(){
 
         reader = new Scanner(System.in);
 
@@ -44,7 +51,7 @@ public class TCPClient {
     }
 
 
-    static void initClient() throws IOException {
+    void initClient() throws IOException {
 
         System.out.println("Connecting to " + hostName + ":" + portNumber+ "…");
         clientSocket = new Socket(hostName, portNumber);
@@ -57,27 +64,22 @@ public class TCPClient {
 
     }
 
-    static void getInputToSend() throws IOException {
+    void getInputToSend() throws IOException {
 
         reader = new Scanner(System.in);
 
-        while(clientSocket.isBound()){
+        System.out.println("Message: ");
+        String message = reader.nextLine();
 
-            System.out.println("Message: ");
-            String message = reader.nextLine();
+        server.broadcast(message);
 
-            if(message.equals("/close")) {
-               break;
-            }
-
-            out.println(message);
-
-        }
-
-        System.out.println("Disconnecting...");
-        clientSocket.close();
-        System.out.println("Disconnected from server.");
     }
+
+    void receiveMessage(String message){
+        System.out.println(message);
+    }
+
+
 
 
 }

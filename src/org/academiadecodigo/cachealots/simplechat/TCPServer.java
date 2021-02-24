@@ -2,21 +2,32 @@ package org.academiadecodigo.cachealots.simplechat;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class TCPServer {
 
-    private static Scanner reader = new Scanner(System.in);
-    private static ServerSocket serverSocket;
-    private static Socket clientSocket;
-    private static PrintWriter out;
-    private static BufferedReader in;
+    private final Scanner reader = new Scanner(System.in);
+    private ServerSocket serverSocket;
+    private BufferedReader in;
+
+    private List<TCPClient> clientList;
 
     public static void main(String[] args) {
+
+
+        new TCPServer();
+
+
+    }
+
+    public TCPServer() {
 
         try {
 
@@ -27,8 +38,7 @@ public class TCPServer {
 
     }
 
-
-    public static void initServer() throws IOException {
+    public void initServer() throws IOException {
         System.out.println("Server Port: ");
         int port = reader.nextInt();
 
@@ -36,36 +46,38 @@ public class TCPServer {
         serverSocket = new ServerSocket(port);
     }
 
-    public static void listenForConnections() throws IOException {
+    public void listenForConnections() throws IOException {
 
-        System.out.println("Waiting for Connections…");
-        clientSocket = serverSocket.accept(); //blocks until receiving connection;
+        clientList = new LinkedList<>();
 
-        System.out.println("Connected to " + clientSocket.getLocalAddress() + ":" + clientSocket.getPort());
-        out = new PrintWriter(clientSocket.getOutputStream(), true);
-        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        while(true){
 
-        while(clientSocket.isBound()){
+            ExecutorService threadPool = Executors.newFixedThreadPool(20);
 
+            Socket clientSocket = serverSocket.accept();
 
+            TCPClient client = new TCPClient(clientSocket, this);
 
-            if(in.ready()){
-                String message = in.readLine();
-                System.out.println(clientSocket.getPort() + ": " + message);
-            }
+            clientList.add(client);
+            threadPool.submit(client);
+
 
         }
 
-        System.out.println("Disconnected from " + clientSocket.getLocalAddress() + ":" + clientSocket.getPort());
-        clientSocket.close();
-        System.out.println("Restart? (yes/no)");
-        if(reader.nextLine().contains("yes")){
-            listenForConnections();
+
+    }
+
+    public void broadcast(String message){
+
+        for (TCPClient client : clientList){
+            client.receiveMessage(message);
         }
 
     }
 
-
-
-
 }
+
+
+
+
+
