@@ -1,6 +1,5 @@
-package org.academiadecodigo.cachealots.simplechat;
+package org.academiadecodigo.cachealots.concurrentchat;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -12,19 +11,14 @@ import java.util.concurrent.Executors;
 
 public class TCPServer {
 
+    //State
     private final Scanner reader = new Scanner(System.in);
     private ServerSocket serverSocket;
-    private BufferedReader in;
-
     private List<Dispatcher> clientList;
 
-    public static void main(String[] args) {
 
+    //Behavior
 
-        new TCPServer();
-
-
-    }
 
     public TCPServer() {
 
@@ -55,26 +49,63 @@ public class TCPServer {
 
         while(true){
 
-
+            //listen for connections
             clientSocket = serverSocket.accept();
 
+            //create new Dispatcher (Runnable) object
             Dispatcher client = new Dispatcher(clientSocket, this);
 
+            //add to LinkedList
             clientList.add(client);
 
+            //submit task to thread pool
             threadPool.submit(client);
 
         }
+    }
+
+    public void broadcast(String message) {
+
+        //for every connected client
+        for (Dispatcher client : clientList){
+
+            //everyone receives the message
+            client.receiveMessage(message);
+
+        }
+    }
+
+    public void eject(Dispatcher dispatcher) {
+
+        //ejects user and saves boolean return
+        boolean success = clientList.remove(dispatcher);
+
+        //temp check for errors: pipes back any error
+        if(!success) dispatcher.receiveMessage("error ejecting form server");
 
     }
 
-    public void broadcast(String message) throws IOException {
+    public String getUsers(){
 
-        for (Dispatcher client : clientList){
-            client.receiveMessage(message);
+        StringBuilder userList = new StringBuilder();
+
+        userList.append("Connected users: " + "\n");
+
+        for (Dispatcher client : clientList) {
+            userList.append(client.getDetails()).append("\n");
         }
 
+        return userList.toString();
     }
+
+
+    //main
+    public static void main(String[] args) {
+        new TCPServer();
+
+    }
+
+
 
 }
 
