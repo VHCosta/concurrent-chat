@@ -9,12 +9,9 @@ import java.util.Scanner;
 
 public class Dispatcher implements Runnable {
 
-    private String hostName;
     private String username;
-    private int portNumber;
-    private TCPServer server;
-    private Socket clientSocket;
-    private Scanner reader;
+    private final TCPServer server;
+    private final Socket clientSocket;
     private PrintWriter out;
     private BufferedReader in;
 
@@ -63,6 +60,7 @@ public class Dispatcher implements Runnable {
 
             server.broadcast(username + ": " + message + "\n");
         }
+
 
     }
 
