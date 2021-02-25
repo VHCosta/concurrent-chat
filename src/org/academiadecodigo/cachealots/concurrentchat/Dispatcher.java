@@ -54,93 +54,103 @@ public class Dispatcher implements Runnable {
 
     private void getInputToSend() throws IOException {
 
-        while(clientSocket.isBound()){
+        while (!clientSocket.isClosed()) {
 
             String message = in.readLine();
 
-            if(message.equals("")) continue;
+            if (message == null) clientSocket.close();
+            if (message.equals("")) continue;
 
             //if message is command i.e. starts with "/"
-            if(message.charAt(0) == ("/".charAt(0))){
+            if (message.charAt(0) == ("/".charAt(0))) {
                 String[] command = message.split(" ");
 
-                if(command[0].equals("/commands")){
-                    String commands = "Available commands:\n" +
-                                    "[/name] Change name\n" +
-                                    "[/quit] Leave server\n" +
-                                    "[/list] Show connected users\n" +
-                                    "[/commands] Show this list\n\n";
+                switch (command[0]) {
 
-
-                    out.print(commands);
-                    out.flush();
-                }
-
-                // if changing username
-                else if (command[0].equals("/name")) {
-
-                    //incorrect format
-                    if(command.length != 2){
-                        out.print("Usage: /name <new_username>" + "\n");
+                    case "/commands" -> {
+                        String commands =
+                                "Available commands:\n" +
+                                "[/name] Change name\n" +
+                                "[/quit] Leave server\n" +
+                                "[/list] Show connected users\n" +
+                                "[/whisper] Show connected users\n" +
+                                "[/commands] Show this list\n\n";
+                        out.print(commands);
                         out.flush();
+                    }
 
-                    } else {
+                    case "/name" -> {
+                        if (command.length != 2) {
+                            out.print("Usage: /name <new_username> | No spaces allowed!" + "\n");
+                            out.flush();
+                            continue;
+                        }
 
-                        //change and broadcast new username
                         server.broadcast(username + " changed username to " + command[1] + "\n");
                         username = command[1];
                     }
+
+                    case "/quit" -> {
+                        server.broadcast(username + " has left the server!" + "\n");
+                        server.eject(this);
+                        out.close();
+                        in.close();
+                        clientSocket.close();
+                    }
+
+                    case "/list" -> {
+                        out.print(server.getUsers());
+                        out.flush();
+                    }
+
+                    case "/whisper" -> {
+                        if (command.length < 3) {
+                            out.print("Usage: /whisper <username> <message>" + "\n");
+                            out.flush();
+                            continue;
+                        }
+
+                        String destination = command[1];
+
+                        StringBuilder whisperBuilder = new StringBuilder();
+
+                        whisperBuilder.append("[whisper] ");
+                        whisperBuilder.append(username);
+                        whisperBuilder.append(": ");
+
+                        for (int i = 2; i < command.length; i++) {
+                            whisperBuilder.append(command[i]);
+                            whisperBuilder.append(" ");
+                        }
+
+                        String whisper = whisperBuilder.toString();
+
+                        server.whisper(destination, whisper);
+
+                    }
+                    default -> {
+                        out.print(command[0] + ": not a recognized command " + "\n");
+                        out.flush();
+                    }
                 }
 
-                // if quitting from server
-                else if(command[0].equals("/quit")){
 
-                    //announce to other users
-                    server.broadcast(username + " has left the server!" + "\n");
-
-                    //remove from server list
-                    server.eject(this);
-
-                    //close streams
-                    out.close();
-                    in.close();
-
-                    //close socket
-                    clientSocket.close();
-
-                    //break out of contained loop (do i need this?)
-                    break;
-                }
-
-                // if requesting for other users
-                else if(command[0].equals("/list")) {
-
-                    out.print(server.getUsers());
-                    out.flush();
-                }
-
-
-
-                // if other command
-                else {
-
-                    out.print(command[0] + ": not a recognized command " + "\n");
-                    out.flush();
-                }
-
-
-            //normal message i.e. not a command
+                //normal message i.e. not a command
             } else {
 
                 server.broadcast(username + ": " + message + "\n");
             }
         }
+        server.eject(this);
     }
 
     public String getDetails() {
         return username + " on connection " + clientSocket.getInetAddress().getHostAddress() + ":" + clientSocket.getPort();
     }
 
+    public String getUsername() {
+        return username;
+    }
 
     public void receiveMessage(String message) {
         out.print(message);

@@ -3,23 +3,28 @@ package org.academiadecodigo.cachealots.concurrentchat;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class TCPServer {
 
     //State
-    private final Scanner reader = new Scanner(System.in);
     private ServerSocket serverSocket;
-    private List<Dispatcher> clientList;
+    private final int PORT = 8080;
+    private final List<Dispatcher> clientList;
 
     //Behavior
     public TCPServer() {
 
+        clientList = Collections.synchronizedList(new ArrayList<>());
+
         try {
+
+            serverSocket = new ServerSocket(PORT);
             initServer();
             listenForConnections();
 
@@ -27,17 +32,12 @@ public class TCPServer {
     }
 
     public void initServer() throws IOException {
-        //System.out.println("Server Port: ");
-        //int port = reader.nextInt();
 
-        int port = 8080;
-        System.out.println("Starting Server on port " + port + "…");
-        serverSocket = new ServerSocket(port);
+        System.out.println("Starting Server on port " + PORT + "…");
     }
 
     public void listenForConnections() throws IOException {
 
-        clientList = new LinkedList<>();
 
         ExecutorService threadPool = Executors.newFixedThreadPool(20);
 
@@ -46,7 +46,7 @@ public class TCPServer {
         while(true){
 
             //listen for connections
-            clientSocket = serverSocket.accept();
+            clientSocket = serverSocket.accept(); //blocks
 
             //create new Dispatcher (Runnable) object
             Dispatcher client = new Dispatcher(clientSocket, this);
@@ -71,6 +71,21 @@ public class TCPServer {
         }
     }
 
+    public void whisper(String name, String message){
+
+        synchronized (clientList) {
+
+            for(Dispatcher client : clientList) {
+
+                if(client.getUsername().equals(name)) {
+                    client.receiveMessage(message);
+                }
+                break;
+            }
+        }
+    }
+
+
     public void eject(Dispatcher dispatcher) {
 
         //ejects user and saves boolean return
@@ -82,12 +97,13 @@ public class TCPServer {
 
     public String getUsers(){
 
-        StringBuilder userList = new StringBuilder();
+        StringBuilder userList = new StringBuilder("[Connected users:] " + "\n");
 
-        userList.append("Connected users: " + "\n");
+        synchronized (clientList) {
 
-        for (Dispatcher client : clientList) {
-            userList.append(client.getDetails()).append("\n");
+            for (Dispatcher client : clientList) {
+                userList.append(client.getDetails()).append("\n");
+            }
         }
 
         return userList.toString();
