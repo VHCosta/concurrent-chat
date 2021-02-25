@@ -42,7 +42,10 @@ public class Dispatcher implements Runnable {
         out.flush();
         username = in.readLine();
 
-        if(username == null) username = "user";
+        if(username.equals("")) username = "user";
+
+        out.print("Welcome, " + username + "! Check available commands with [/commands]!\n");
+        out.flush();
 
         server.broadcast(username + " has joined the chat!\n");
 
@@ -55,18 +58,30 @@ public class Dispatcher implements Runnable {
 
             String message = in.readLine();
 
-            if(message == null) continue;
+            if(message.equals("")) continue;
 
             //if message is command i.e. starts with "/"
             if(message.charAt(0) == ("/".charAt(0))){
                 String[] command = message.split(" ");
 
+                if(command[0].equals("/commands")){
+                    String commands = "Available commands:\n" +
+                                    "[/name] Change name\n" +
+                                    "[/quit] Leave server\n" +
+                                    "[/list] Show connected users\n" +
+                                    "[/commands] Show this list\n\n";
+
+
+                    out.print(commands);
+                    out.flush();
+                }
+
                 // if changing username
-                if (command[0].equals("/name")) {
+                else if (command[0].equals("/name")) {
 
                     //incorrect format
                     if(command.length != 2){
-                        out.print("Usage: /name <new_username>");
+                        out.print("Usage: /name <new_username>" + "\n");
                         out.flush();
 
                     } else {
@@ -106,7 +121,6 @@ public class Dispatcher implements Runnable {
 
 
 
-
                 // if other command
                 else {
 
@@ -126,6 +140,7 @@ public class Dispatcher implements Runnable {
     public String getDetails() {
         return username + " on connection " + clientSocket.getInetAddress().getHostAddress() + ":" + clientSocket.getPort();
     }
+
 
     public void receiveMessage(String message) {
         out.print(message);

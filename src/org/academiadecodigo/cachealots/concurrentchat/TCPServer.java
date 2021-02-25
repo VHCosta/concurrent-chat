@@ -16,25 +16,21 @@ public class TCPServer {
     private ServerSocket serverSocket;
     private List<Dispatcher> clientList;
 
-
     //Behavior
-
-
     public TCPServer() {
 
         try {
-
             initServer();
             listenForConnections();
 
         } catch (IOException e) { System.out.println(e.getMessage()); }
-
     }
 
     public void initServer() throws IOException {
-        System.out.println("Server Port: ");
-        int port = reader.nextInt();
+        //System.out.println("Server Port: ");
+        //int port = reader.nextInt();
 
+        int port = 8080;
         System.out.println("Starting Server on port " + port + "…");
         serverSocket = new ServerSocket(port);
     }
@@ -82,7 +78,6 @@ public class TCPServer {
 
         //temp check for errors: pipes back any error
         if(!success) dispatcher.receiveMessage("error ejecting form server");
-
     }
 
     public String getUsers(){
@@ -101,12 +96,9 @@ public class TCPServer {
 
     //main
     public static void main(String[] args) {
+
         new TCPServer();
-
     }
-
-
-
 }
 
 
