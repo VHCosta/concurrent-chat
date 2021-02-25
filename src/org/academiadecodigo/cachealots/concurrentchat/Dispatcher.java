@@ -58,8 +58,10 @@ public class Dispatcher implements Runnable {
 
             String message = in.readLine();
 
-            if (message == null) clientSocket.close();
-            if (message.equals("")) continue;
+            if (message == null) {
+                clientSocket.close();
+                break;
+            } else if (message.equals("")) continue;
 
             //if message is command i.e. starts with "/"
             if (message.charAt(0) == ("/".charAt(0))) {
