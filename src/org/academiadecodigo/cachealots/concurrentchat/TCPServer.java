@@ -3,6 +3,7 @@ package org.academiadecodigo.cachealots.concurrentchat;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -14,7 +15,7 @@ public class TCPServer {
 
     //State
     private ServerSocket serverSocket;
-    private final int PORT = 8080;
+    private static int PORT = 8080;
     private final List<Dispatcher> clientList;
 
     //Behavior
@@ -112,6 +113,11 @@ public class TCPServer {
 
     //main
     public static void main(String[] args) {
+
+        if(args.length > 0) {
+            int arg = Integer.parseInt(args[0]);
+            if (arg >= 0 && arg <= 9999) PORT = arg;
+        }
 
         new TCPServer();
     }
